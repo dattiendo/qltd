@@ -1,94 +1,174 @@
+import tkinter as tk
+from tkinter import messagebox
+import csv
+from datetime import datetime
+
 class User:
     def __init__(self, username, password):
         self.username = username
         self.password = password
-        
 class SportMatch:
     def __init__(self):
+        self.teams = []
         self.matches = []
+        self.players = []
+        self.load_teams_from_csv()
+        self.load_results_from_csv()
+        self.load_players_from_csv()
 
-    def add_match(self, match):
-        self.matches.append(match)
-        print(f"Match {match.name} has been added.")
+    def load_teams_from_csv(self):
+        pass
 
-    def remove_match(self, match_id):
-        for match in self.matches:
-            if match.match_id == match_id:
-                self.matches.remove(match)
-                print(f"Match {match_id} has been removed.")
+    def load_results_from_csv(self):
+        pass
+
+    def load_players_from_csv(self):
+        pass
+
+    def save_players_to_csv(self):
+        pass
+
+class SportMatchApp:
+    def __init__(self, master):
+        self.master = master
+        self.master.title("Hệ Thống Quản Lý Thể Thao")
+        
+        self.users = []
+        self.load_users_from_csv()
+
+        self.sport_match = SportMatch()
+
+        self.login_frame = tk.Frame(self.master)
+        self.login_frame.pack(pady=20)
+
+        tk.Label(self.login_frame, text="Tên Người Dùng:").grid(row=0, column=0)
+        self.username_entry = tk.Entry(self.login_frame)
+        self.username_entry.grid(row=0, column=1)
+
+        tk.Label(self.login_frame, text="Mật Khẩu:").grid(row=1, column=0)
+        self.password_entry = tk.Entry(self.login_frame, show="*")
+        self.password_entry.grid(row=1, column=1)
+
+        self.login_button = tk.Button(self.login_frame, text="Đăng Nhập", command=self.login)
+        self.login_button.grid(row=2, column=0)
+
+        self.register_button = tk.Button(self.login_frame, text="Đăng Kí", command=self.show_register_interface)
+        self.register_button.grid(row=2, column=1)
+
+        self.username_entry.bind("<Return>", lambda event: self.login())
+        self.password_entry.bind("<Return>", lambda event: self.login())
+
+        self.admin_frame = None
+        self.current_function_frame = None
+
+    def load_users_from_csv(self):
+        try:
+            with open('users.csv', 'r', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                for row in reader:
+                    if row:
+                        username, password = row
+                        self.users.append(User(username, password))
+        except FileNotFoundError:
+            print("Tệp users.csv không tồn tại. Một tệp mới sẽ được tạo khi đăng kí người dùng.")
+
+    def save_users_to_csv(self):
+        with open('users.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            for user in self.users:
+                writer.writerow([user.username, user.password])
+
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        for user in self.users:
+            if user.username == username and user.password == password:
+                messagebox.showinfo("Đăng Nhập Thành Công", f"Chào mừng, {username}!")
+                self.show_admin_interface()
                 return
-        print(f"Match {match_id} not found.")
+        messagebox.showerror("Lỗi Đăng Nhập", "Tên người dùng hoặc mật khẩu không đúng.")
 
-class Person(SportMatch):
-    def __init__(self, name, age, gender):
-        super().__init__(name)
-        self.age = age
-        self.gender = gender
+    def show_admin_interface(self):
+        self.login_frame.pack_forget()
 
-    def get_details(self):
-        return f"Name: {self.name}, Age: {self.age}, Gender: {self.gender}"
+        self.admin_frame = tk.Frame(self.master)
+        self.admin_frame.pack(pady=20)
 
-class Player(Person):
-    def __init__(self, name, age, gender, player_number, player_position):
-        super().__init__(name, age, gender)
-        self.player_number = player_number
-        self.player_position = player_position
+        tk.Label(self.admin_frame, text="Quản Lý Hệ Thống", font=("Arial", 16)).grid(row=0, columnspan=2)
 
-    def get_player_info(self):
-        return f"{self.get_details()}, Player Number: {self.player_number}, Position: {self.player_position}"
+        self.add_team_button = tk.Button(self.admin_frame, text="Thêm/Xóa Đội", command=self.show_add_team_interface)
+        self.add_team_button.grid(row=1, column=0)
 
-class Coach(Person):
-    def __init__(self, name, age, gender, coaching_experience, managed_team):
-        super().__init__(name, age, gender)
-        self.coaching_experience = coaching_experience
-        self.managed_team = managed_team
+        self.add_player_button = tk.Button(self.admin_frame, text="Thêm Cầu Thủ", command=self.show_add_player_interface)
+        self.add_player_button.grid(row=1, column=1)
 
-    def get_coach_info(self):
-        return f"{self.get_details()}, Experience: {self.coaching_experience} years, Managed Team: {self.managed_team}"
+        self.schedule_match_button = tk.Button(self.admin_frame, text="Lên Lịch Trận Đấu", command=self.show_schedule_match_interface)
+        self.schedule_match_button.grid(row=2, column=0)
 
-class Referee(Person):
-    def __init__(self, name, age, gender, experience_years):
-        super().__init__(name, age, gender)
-        self.experience_years = experience_years
+        self.record_result_button = tk.Button(self.admin_frame, text="Ghi Kết Quả Trận Đấu", command=self.show_record_result_interface)
+        self.record_result_button.grid(row=2, column=1)
 
-    def get_referee_info(self):
-        return f"{self.get_details()}, Experience: {self.experience_years} years"
+        
+        self.logout_button = tk.Button(self.admin_frame, text="Đăng Xuất", command=self.logout)
+        self.logout_button.grid(row=3, columnspan=2)
 
-class Team(SportMatch):
-    def __init__(self, team_name):
-        super().__init__(team_name)
-        self.persons = []
+ 
+    def logout(self):
+       
+        if self.admin_frame:
+            self.admin_frame.pack_forget()
+        self.login_frame.pack(pady=20)
 
-    def add_person(self, person):
-        if person not in self.persons:
-            self.persons.append(person)
-            print(f"{person.name} has been added to {self.name}.")
-        else:
-            print(f"{person.name} already exists in the team.")
+    def show_register_interface(self):
+        self.login_frame.pack_forget()
 
-    def remove_person(self, person):
-        if person in self.persons:
-            self.persons.remove(person)
-            print(f"{person.name} has been removed from {self.name}.")
-        else:
-            print(f"{person.name} does not exist in the team.")
+        self.register_frame = tk.Frame(self.master)
+        self.register_frame.pack(pady=20)
 
-class Match(SportMatch):
-    def __init__(self, match_id, team1, team2, referee, match_date):
-        super().__init__(f"Match {match_id}")
-        self.team1 = team1
-        self.team2 = team2
-        self.referee = referee
-        self.match_date = match_date
-        self.result = None
+        tk.Label(self.register_frame, text="Tên Người Dùng:").grid(row=0, column=0)
+        self.new_username_entry = tk.Entry(self.register_frame)
+        self.new_username_entry.grid(row=0, column=1)
 
-    def schedule_match(self):
-        return f"{self.name}: {self.team1.name} vs {self.team2.name} on {self.match_date}, Referee: {self.referee.name}"
+        tk.Label(self.register_frame, text="Mật Khẩu:").grid(row=1, column=0)
+        self.new_password_entry = tk.Entry(self.register_frame, show="*")
+        self.new_password_entry.grid(row=1, column=1)
 
-    def record_result(self, team1_score, team2_score):
-        self.result = (team1_score, team2_score)
-        return f"Match result recorded: {self.team1.name} {team1_score} - {self.team2.name} {team2_score}"
+        tk.Button(self.register_frame, text="Đăng Kí", command=self.register_user).grid(row=2, column=0, columnspan=2)
 
+        tk.Button(self.register_frame, text="Quay Lại", command=self.show_login_interface).grid(row=3, column=0, columnspan=2)
+
+    def show_login_interface(self):
+        self.register_frame.pack_forget()
+        self.login_frame.pack(pady=20)
+
+    def register_user(self):
+        new_username = self.new_username_entry.get()
+        new_password = self.new_password_entry.get()
+
+        if not new_username or not new_password:
+            messagebox.showerror("Lỗi", "Vui lòng nhập tên người dùng và mật khẩu.")
+            return
+
+        for user in self.users:
+            if user.username == new_username:
+                messagebox.showerror("Lỗi", "Tên người dùng đã tồn tại.")
+                return
+
+        self.users.append(User(new_username, new_password))
+        self.save_users_to_csv()
+        messagebox.showinfo("Thành Công", "Đăng kí thành công! Bạn có thể đăng nhập với tài khoản mới.")
+        self.show_login_interface()
+
+    def clear_current_function_frame(self):
+        if self.current_function_frame:
+            self.current_function_frame.pack_forget()
+            self.current_function_frame = None
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SportMatchApp(root)
+    root.mainloop()
 
 
 
